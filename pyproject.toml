@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tlyle_Part1"
+name = "tlyle_Assignment2"
 version = "0.0.0"
 authors = [
   { name="Tucker Lyle" },
 ]
-description = "Part1 workflow"
+description = "Assignment2 workflow"
 readme = "README.md"
 license = { file="LICENSE" }
 requires-python = ">=3.9"
@@ -28,4 +28,4 @@ dependencies = [
 
 
 [project.urls]
-"Homepage" = "https://github.com/tuckluck/Part1.git"
+"Homepage" = "https://github.com/tuckluck/Assignment2.git"
