@@ -1,3 +1,6 @@
+#working. dont edit this version.
+
+
 import numpy as np
 
 #enter x, y , z coordinates as a row for each node
@@ -22,14 +25,18 @@ node_DOF = np.matrix([[0,0,0,0,0,0],
                       [1,1,1,1,1,1],
                       [1,1,1,1,1,1]])
 
-#enter member properties and connecting nodes E, nu, A, Iy, Iz, J, 1, 2
+#enter member properties and connecting nodes E, nu, A, Iy, Iz, Irho, J, 1, 2
 #the first row will be considered member A, the second row will be member B and so on
-members = np.matrix([[100, .5, 2, 10, 10, 10, 1, 2],
-                    [100, .5, 2, 10, 10, 10, 3, 2],
-                    [100, .5, 2, 10, 10, 10, 3, 4],
-                    [100, .5, 2, 10, 10, 10, 4, 1],
-                    [100, .5, 2, 10, 10, 10, 1, 3]])
+members = np.matrix([[100, .5, 2, 10, 10, 10, 10, 1, 2],
+                    [100, .5, 2, 10, 10, 10, 10, 3, 2],
+                    [100, .5, 2, 10, 10, 10, 10, 3, 4],
+                    [100, .5, 2, 10, 10, 10, 10, 4, 1],
+                    [100, .5, 2, 10, 10, 10, 10, 1, 3]])
 
+member_localz = np.array([0,0,[0,0,1],0,0], dtype=object)
+                          
+                         
+                    
 
 def local_elastic_stiffness_matrix_3D_beam(E: float, nu: float, A: float, L: float, Iy: float, Iz: float, J: float) -> np.ndarray:
     """
@@ -182,14 +189,14 @@ def transformation_matrix_3D(gamma: np.ndarray) -> np.ndarray:
 
 
 
-def global_stiffness_mat(members,node_cordinates):
+def global_stiffness_mat(members,node_cordinates, member_localz):
     K_global = np.zeros([len(node_cordinates)*6,len(node_cordinates)*6])
     for i in range(len(members)):
         E = members[i,0]
         nu = members[i,1]
         A = members[i,2]
-        first_node = int(members[i,6])
-        second_node = int(members[i,7])
+        first_node = int(members[i,7])
+        second_node = int(members[i,8])
         
         fnc = node_cordinates[first_node-1]  #first node cordinates
         snc = node_cordinates[second_node-1] #second node cordinates
@@ -198,11 +205,15 @@ def global_stiffness_mat(members,node_cordinates):
                     (fnc[0,2] - snc[0,2])**2)
         Iy = members[i,3]
         Iz = members[i,4]
-        J = members[i,5]   
+        J = members[i,6]   
         
-        gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], snc[0,0], snc[0,1], snc[0,2])
+        if type(member_localz[i]) == list:
+            gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], snc[0,0], snc[0,1], snc[0,2], member_localz[i])
+        else:
+            gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], snc[0,0], snc[0,1], snc[0,2])
+        
         Gamma = transformation_matrix_3D(gamma)
-        member_mat = local_elastic_stiffness_matrix_3D_beam(E, nu, A, L, Iy, Iz, J) 
+        
         
         # Compute local stiffness matrix
         k_local = local_elastic_stiffness_matrix_3D_beam(E, nu, A, L, Iy, Iz, J)
@@ -219,18 +230,18 @@ def global_stiffness_mat(members,node_cordinates):
         K_global[(second_node-1)*6:(second_node)*6,(second_node-1)*6:(second_node)*6] += b_right
         K_global[(first_node-1)*6:(first_node)*6,(second_node-1)*6:(second_node)*6] += b_left
         K_global[(second_node-1)*6:(second_node)*6,(first_node-1)*6:(first_node)*6] += t_right
-        
+      
    
     return K_global
     
 
-K_global = global_stiffness_mat(members,node_cordinates)
+K_global = global_stiffness_mat(members,node_cordinates,member_localz)
 
 
 def is_symmetric(matrix, tol=1e-8):
     return np.allclose(matrix, matrix.T, atol=tol)
 
-is_symmetric(global_stiffness_mat(members,node_cordinates))
+
 
 
 F_global = np.zeros((len(node_DOF)*6, 1))  # 24x1 zero matrix
@@ -294,5 +305,3 @@ print(displacements)
 
 print("Reaction forces (at constrained DOFs):")
 print(reaction_forces)
-
-
