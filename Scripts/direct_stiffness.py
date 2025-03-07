@@ -1,57 +1,9 @@
-#working. dont edit this version.
 
-
+import math as mt
 import numpy as np
+import scipy as sc
 
-#enter x, y , z coordinates as a row for each node
-#the first row will be considered node 1 and so on
-node_cordinates = np.matrix([[0,0,0],
-                              [-5,1,10],
-                              [-1,5,13],
-                            [-3,7,11],
-                             [6,9,5]])
-
-#enter nodal forces/torques for each node as a row (Fx, Fy, Fx, Mx, My, Mz)
-#the first row will be considered node 1 and so on
-node_force = np.matrix([[0,0,0,0,0,0],
-                        [0.1,-0.05,-0.075,0,0,0],
-                        [0,0,0,.5,-.1,.3],
-                        [0,0,0,0,0,0],
-                        [0,0,0,0,0,0]])
-
-#enter nodal degrees of freedom for each node as a row (x,y,z,rot_x,rot_y,rot_z)
-#0 for constrained and 1 for free
-#the first row will be considered node 1 and so on
-node_DOF = np.matrix([[1,1,0,1,1,1],
-                      [1,1,1,1,1,1],
-                      [1,1,1,1,1,1],
-                     [0,0,0,0,0,0],
-                     [0,0,0,1,1,1]])
-
-member_localz = np.array([0,0,0,0,0], dtype=object)
-
-
-#enter member properties and connecting nodes E, nu, A, Iy, Iz, J, 1, 2
-#the first row will be considered member A, the second row will be member B and so on
-r = 1
-E = 500
-nu = .3
-A = np.pi*r**2
-Iy = (np.pi*r**4)/4
-Iz = (np.pi*r**4)/4
-Irho = (np.pi*r**4)/2
-J = (np.pi*r**4)/2
-
-
-
-
-
-members = np.matrix([[E, nu, A, Iy, Iz, Irho, J, 1, 2],
-                    [E, nu, A, Iy, Iz, Irho, J, 2, 3],
-                    [E, nu, A, Iy, Iz, Irho, J, 3, 4],
-                    [E, nu, A, Iy, Iz, Irho, J, 3, 5]])                          
-                         
-                    
+            
 
 def local_elastic_stiffness_matrix_3D_beam(E: float, nu: float, A: float, L: float, Iy: float, Iz: float, J: float) -> np.ndarray:
     """
@@ -251,24 +203,12 @@ def global_stiffness_mat(members,node_cordinates, member_localz):
     return K_global
     
 
-K_global = global_stiffness_mat(members,node_cordinates,member_localz)
+
 
 
 def is_symmetric(matrix, tol=1e-8):
     return np.allclose(matrix, matrix.T, atol=tol)
 
-
-
-
-F_global = np.zeros((len(node_DOF)*6, 1))  # 24x1 zero matrix
-    
-DOF_global = np.zeros((len(node_DOF)*6, 1))  # 24x1 zero matrix
-
-for i in range(len(node_force)):  
-    F_global[i*6:i*6+6, 0] = node_force[i].flatten()
-
-for i in range(len(node_DOF)):  
-    DOF_global[i*6:i*6+6, 0] = node_DOF[i].flatten()
 
 
 def solve_for_displacements_and_reactions(K_global, F_global, node_DOF):
@@ -311,16 +251,9 @@ def solve_for_displacements_and_reactions(K_global, F_global, node_DOF):
     # Step 5: Calculate the reaction forces (forces at constrained DOFs)
     reaction_forces = np.dot(K_global[constrained_dofs, :], displacements)  # Reaction forces at constrained DOFs
     
-    return displacements, reaction_forces
+    return displacements, reaction_forces, K_reduced
 
-# Example usage
-displacements, reaction_forces = solve_for_displacements_and_reactions(K_global, F_global, node_DOF)
 
-print("Displacements (in global coordinate system):")
-print(displacements)
-
-print("Reaction forces (at constrained DOFs):")
-print(reaction_forces)
 
 
 
@@ -403,58 +336,6 @@ def local_geometric_stiffness_matrix_3D_beam(L, A, I_rho, Fx2, Mx2, My1, Mz1, My
     return k_g
 
 
-def local_geometric_stiffness_matrix_3D_beam_without_interaction_terms(L, A, I_rho, Fx2):
-    """
-    local element geometric stiffness matrix
-    source: p. 257 of McGuire's Matrix Structural Analysis 2nd Edition
-    Given:
-        material and geometric parameters:
-            L, A, I_rho (polar moment of inertia)
-        element forces and moments:
-            Fx2
-    Context:
-        load vector:
-            [Fx1, Fy1, Fz1, Mx1, My1, Mz1, Fx2, Fy2, Fz2, Mx2, My2, Mz2]
-        DOF vector:
-            [u1, v1, w1, th_x1, th_y1, th_z1, u2, v2, w2, th_x2, th_y2, th_z2]
-        Equation:
-            [load vector] = [stiffness matrix] @ [DOF vector]
-    Returns:
-        12 x 12 geometric stiffness matrix k_g
-    """
-    k_g = np.zeros((12, 12))
-    # upper triangle off diagonal terms
-    k_g[0, 6] = -Fx2 / L
-    k_g[1, 5] = Fx2 / 10.0
-    k_g[1, 7] = -6.0 * Fx2 / (5.0 * L)
-    k_g[1, 11] = Fx2 / 10.0
-    k_g[2, 4] = -Fx2 / 10.0
-    k_g[2, 8] = -6.0 * Fx2 / (5.0 * L)
-    k_g[2, 10] = -Fx2 / 10.0
-    k_g[3, 9] = -Fx2 * I_rho / (A * L)
-    k_g[4, 8] = Fx2 / 10.0
-    k_g[4, 10] = -Fx2 * L / 30.0
-    k_g[5, 7] = -Fx2 / 10
-    k_g[5, 11] = -Fx2 * L / 30.0
-    k_g[7, 11] = -Fx2 / 10.0
-    k_g[8, 10] = Fx2 / 10.0
-    # add in the symmetric lower triangle
-    k_g = k_g + k_g.transpose()
-    # add diagonal terms
-    k_g[0, 0] = Fx2 / L
-    k_g[1, 1] = 6.0 * Fx2 / (5.0 * L)
-    k_g[2, 2] = 6.0 * Fx2 / (5.0 * L)
-    k_g[3, 3] = Fx2 * I_rho / (A * L)
-    k_g[4, 4] = 2.0 * Fx2 * L / 15.0
-    k_g[5, 5] = 2.0 * Fx2 * L / 15.0
-    k_g[6, 6] = Fx2 / L
-    k_g[7, 7] = 6.0 * Fx2 / (5.0 * L)
-    k_g[8, 8] = 6.0 * Fx2 / (5.0 * L)
-    k_g[9, 9] = Fx2 * I_rho / (A * L)
-    k_g[10, 10] = 2.0 * Fx2 * L / 15.0
-    k_g[11, 11] = 2.0 * Fx2 * L / 15.0
-    return k_g
-
 def compute_internal_forces(members, node_cordinates, member_localz, displacements):
     """
     Computes internal forces and moments in local coordinates for each member.
@@ -494,15 +375,16 @@ def compute_internal_forces(members, node_cordinates, member_localz, displacemen
             gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], 
                                        snc[0,0], snc[0,1], snc[0,2])
         
-        Gamma = transformation_matrix_3D(gamma)
+        Gamma = transformation_matrix_3D(gamma)   #gives 12x12 large Gamma transformation matrix
         k_local = local_elastic_stiffness_matrix_3D_beam(E, nu, A, L, Iy, Iz, J)
        
         # Extract nodal displacements for this member
-        d_global = np.hstack((displacements[(first_node-1)*6:(first_node)*6],
+        #d_global = displacements(
+        d_global = np.vstack((displacements[(first_node-1)*6:(first_node)*6],
                                displacements[(second_node-1)*6:(second_node)*6]))
-        
+       
         # Transform global displacements to local coordinate system
-        d_local = Gamma @ d_global.reshape(-1, 1)  # Ensure it is a column vector
+        d_local = Gamma @ d_global  # Ensure it is a column vector
 
         
         # Compute internal force and moment vector in local coordinates
@@ -512,10 +394,87 @@ def compute_internal_forces(members, node_cordinates, member_localz, displacemen
     
     return internal_forces
 
-# Example usage
-internal_forces = compute_internal_forces(members, node_cordinates, member_localz, displacements)
 
 
-for i, f in enumerate(internal_forces):
-    print(f"Member {i+1} Internal Forces (Local Coordinates):\n", f, "\n")
 
+def global_3D_stiffness_mat(members,node_cordinates, member_localz, internal_forces):
+    Kg_global = np.zeros([len(node_cordinates)*6,len(node_cordinates)*6])
+    for i in range(len(members)):
+        E = members[i,0]
+        nu = members[i,1]
+        A = members[i,2]
+        first_node = int(members[i,7])
+        second_node = int(members[i,8])
+        
+        fnc = node_cordinates[first_node-1]  #first node cordinates
+        snc = node_cordinates[second_node-1] #second node cordinates
+        L = np.sqrt((fnc[0,0]-snc[0,0])**2 +   #finds the length of the member based on two nodes it connects
+                    (fnc[0,1] - snc[0,1])**2 + 
+                    (fnc[0,2] - snc[0,2])**2)
+        Iy = members[i,3]
+        Iz = members[i,4]
+        Irho = members[i,5]
+        J = members[i,6]   
+        
+        Fx2 = internal_forces[i,6]
+        Mx2 = internal_forces[i,9]
+        My1 = internal_forces[i,4]
+        Mz1 = internal_forces[i,5]
+        My2 = internal_forces[i,10]
+        Mz2 = internal_forces[i,11]
+        
+        
+        if type(member_localz[i]) == list:
+            gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], snc[0,0], snc[0,1], snc[0,2], member_localz[i])
+        else:
+            gamma = rotation_matrix_3D(fnc[0,0], fnc[0,1], fnc[0,2], snc[0,0], snc[0,1], snc[0,2])
+        
+        Gamma = transformation_matrix_3D(gamma)
+        
+        
+        # Compute local 3d stiffness matrix
+        kg_local = local_geometric_stiffness_matrix_3D_beam(L, A, Irho, Fx2, Mx2, My1, Mz1, My2, Mz2)
+        
+        # Transform to global coordinate system
+        kg_global = Gamma.T @ kg_local @ Gamma  # Transformation applied
+        
+        t_left = kg_global[0:6,0:6]
+        t_right = kg_global[0:6,6:12]
+        b_left = kg_global[6:12,0:6]
+        b_right = kg_global[6:12,6:12]
+    
+        
+        Kg_global[(first_node-1)*6:(first_node)*6, (first_node-1)*6:(first_node)*6] += t_left
+        Kg_global[(second_node-1)*6:(second_node)*6, (second_node-1)*6:(second_node)*6] += b_right
+        Kg_global[(first_node-1)*6:(first_node)*6, (second_node-1)*6:(second_node)*6] += t_right
+        Kg_global[(second_node-1)*6:(second_node)*6, (first_node-1)*6:(first_node)*6] += b_left
+      
+   
+    return Kg_global
+ 
+
+def solve_for_Kg_global_ff(Kg_global, F_global, node_DOF):
+    
+    
+    # Step 1: Apply boundary conditions and reduce the stiffness matrix and force vector
+    free_dofs = []
+    constrained_dofs = []
+    
+    # Identify free and constrained DOFs
+    for i in range(len(node_DOF)):
+        for j in range(6):  # 6 DOFs per node
+            if node_DOF[i, j] == 1:
+                free_dofs.append(i * 6 + j)  # free DOF for node i
+            else:
+                constrained_dofs.append(i * 6 + j)  # constrained DOF for node i
+    
+    # Step 2: Reduce the system
+    Kg_reduced = Kg_global[np.ix_(free_dofs, free_dofs)]  # Stiffness matrix for free DOFs
+    
+    return Kg_reduced
+
+
+
+def solve_gen_eig(K_global,Kg_global):    #### needs to be free degree of freedom versions of those matrices
+    eigenvalues, eigenvectors = sc.linalg.eig(K_reduced, -Kg_reduced)
+    return eigenvalues, eigenvectors
