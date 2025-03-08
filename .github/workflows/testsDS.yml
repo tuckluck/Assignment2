@@ -1,29 +1,44 @@
-name: Run tests and upload coverage
+name: Run Tests
 
-on: 
-  push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
-    name: Run tests and collect coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    runs-on: ${{ matrix.platform }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+    strategy:
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+        python-version: ["3.12.8"]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
+        run: pip install -e .
+
+      - name: Install test dependencies
         run: pip install pytest pytest-cov
 
-      - name: Run tests
-        run: pytest --cov-branch --cov-report=xml
+      - name: Run tests with coverage
+        run: pytest --cov=Scripts --cov-report=xml
+        # Replace 'my_package' with your actual package name
 
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
         with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        slug: tuckluck/Assignment2
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage.xml
+          fail_ci_if_error: true  # Ensure failure if upload fails
