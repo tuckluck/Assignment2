@@ -475,6 +475,6 @@ def solve_for_Kg_global_ff(Kg_global, F_global, node_DOF):
 
 
 
-def solve_gen_eig(K_global,Kg_global):    #### needs to be free degree of freedom versions of those matrices
+def solve_gen_eig(K_reduced,Kg_reduced):    #### needs to be free degree of freedom versions of those matrices
     eigenvalues, eigenvectors = sc.linalg.eig(K_reduced, -Kg_reduced)
     return eigenvalues, eigenvectors
