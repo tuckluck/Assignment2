@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 import math as mt
-from your_module import (
+from direct_stiffness import (
     global_stiffness_mat, solve_for_displacements_and_reactions, compute_internal_forces,
     global_3D_stiffness_mat, solve_for_Kg_global_ff, solve_gen_eig
 )
