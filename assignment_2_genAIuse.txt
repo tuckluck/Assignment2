@@ -1,0 +1,1 @@
+In this assignment i used chatGPT to help write my initial function to solve for internal forces and to solve for displacements/reactions. The displacements and reactions function has significant errors and required lots of editing. The internal forces function was almost correct. I also used chatGPT to help write my pytest functions 
