@@ -18,7 +18,7 @@ pip install --upgrade pip setuptools wheel
 ```
 Test that the code is working with pytest:
 ```bash
-pytest -v --cov=Newton_and_ElastoPlastic --cov-report term-missing
+pytest -v --cov=direct_stiffness --cov-report term-missing
 ```
 Code coverage should be nearly 100%. Now you are prepared to write your own code based on this method and/or run the tutorial. 
 
