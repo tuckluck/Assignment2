@@ -1,4 +1,7 @@
 # Assignment2
+
+Welcome to the Assignment 2 repo. Please follow the directions below to download and run the code for the direct stiffness solver
+
 To install this package, please begin by setting up a conda environment (mamba also works):
 ```bash
 conda create --name tl_Assignment2-env python=3.12
