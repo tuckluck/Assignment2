@@ -35,7 +35,7 @@ pip install jupyter
 
 Run Tutorial
 ```bash
-jupyter notebook ds_tutorial1.ipynb
+jupyter notebook Assign2_tutorial.ipynb
 ```
 
 
