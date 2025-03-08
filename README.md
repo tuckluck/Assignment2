@@ -16,6 +16,12 @@ Ensure that pip is using the most up to date version of setuptools:
 ```bash
 pip install --upgrade pip setuptools wheel
 ```
+Test that the code is working with pytest:
+```bash
+pytest -v --cov=Newton_and_ElastoPlastic --cov-report term-missing
+```
+Code coverage should be nearly 100%. Now you are prepared to write your own code based on this method and/or run the tutorial. 
+
 Create an editable install of the Newtonian method code (note: you must be in the correct directory):
 ```bash
 pip install -e .
